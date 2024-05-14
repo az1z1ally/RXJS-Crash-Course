@@ -3,6 +3,7 @@ RXJS (Reactive extension for JS) - Is a library for reactive programming using o
 Observables - collection of items over time
 - Unlike array, it does'nt retain items
 - emitted items can be observed over time
+- A single observable can emit multiple data(at 1s mark, then 10s later etc.)
 
 example:
 If you are creating a program to keep track of keystrokes you can keep them in the array
