@@ -14,6 +14,6 @@ Observable: they will be kind of occuring over time but you can't ask let say fo
 ### Git unstaging
 unstage changes in Git, there are a couple of ways to do it. Let me explain them:
 
-1. git reset HEAD <file>: This command unstages any modifications made to a specific file since the last commit. It doesn’t revert the changes in the filesystem, but it removes the file from the staging area. Essentially, it undoes the staging of changes for that file1.
+1. `git reset HEAD <file>:` This command unstages any modifications made to a specific file since the last commit. It doesn’t revert the changes in the filesystem, but it removes the file from the staging area. Essentially, it undoes the staging of changes for that file1.
 
-2. git rm --cached <file>: This command stops tracking a file completely, leaving it in the filesystem but removing it from the repository. If the file was already committed before, it stages the removal of the file(s) from the repo. However, it leaves the file in your working tree, making it an untracked file1
+2. `git rm --cached <file>:` This command stops tracking a file completely, leaving it in the filesystem but removing it from the repository. If the file was already committed before, it stages the removal of the file(s) from the repo. However, it leaves the file in your working tree, making it an untracked file1
