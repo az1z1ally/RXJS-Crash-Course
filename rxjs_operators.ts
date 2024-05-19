@@ -1,5 +1,5 @@
-import { fromEvent, of, pluck, catchError, EMPTY } from 'rxjs'
-import { concatMap, debounceTime, distinctUntilChanged, map, startWith, Observable, delay, filter, from, switchMap, tap } from 'rxjs/operators'
+import { from, fromEvent, of, Observable, pluck, catchError, EMPTY, exhaustMap, BehaviorSubject, Subject } from 'rxjs'
+import { concatMap, debounceTime, distinctUntilChanged, map, startWith, delay, filter, switchMap, tap } from 'rxjs/operators'
 
 /****** CREATION OPERATORS  *********/
 
@@ -108,6 +108,21 @@ const setPhotos = (value: Photo[]) => {
 where everything is just subscribed at once regardless of the order, so if the order does'nt matter you want everything to be done as quickly as possible you can use mergeMap()
 */
 
+const operatorfunc = (operator: any) => () => {
+  from([0, 1, 2, 3, 4, 5])
+    .pipe(operator((x: any) => of(x).pipe(delay(500))))
+    .subscribe(
+      console.log,
+      () => {},
+      () => console.log(`${operator.name} completed`)   
+    )
+}
+
+operatorfunc(switchMap)()
+// If the new value is coming from the source observable, but the previously mapped observable is not yet fulfilled, then the new value from the source observable will be ignored. It is perfect for handling events that might be triggered multiple times in rapid succession but where only the initial trigger should be acted upon untill it completes.
+operatorfunc(exhaustMap)() // This will display 0 in this case because of the delay since the 1st observable still exist. 
+operatorfunc(switchMap)()
+
 /* JOIN CREATION OPERATORS */
 // combineLatest() -- create a new stream from scratch, it take the last emission from its input stream & emit them all together. 
 
@@ -154,3 +169,17 @@ searchInputControl.valueChanges.pipe(debounceTime(200)).subscribe(() => {
     this.searchResults = [];
   }
 }))
+
+interface UserInterface  {
+  id: string
+  name: string
+}
+
+const users$ = new BehaviorSubject<UserInterface[]>([])
+const subject$ = new Subject()
+
+// We can update value stored in BehaviorSubject, which means we can store some state inside it which we can use in our components, this is the reason BehaviorSubject is often used that Subject
+// Also we can subscribe to both Subject & BehaviorSubject just like obsersavable streams
+
+// Subject does'nt store value inside, we don't have getValue() inside subject, subject just propagate value to all our listeners when we call next().
+// Unlike BehaviorSubject, Subject doesn't have an initial value
