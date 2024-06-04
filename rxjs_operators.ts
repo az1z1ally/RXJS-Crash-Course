@@ -170,6 +170,28 @@ searchInputControl.valueChanges.pipe(debounceTime(200)).subscribe(() => {
   }
 }))
 
+
+// Dispatch & select
+
+this.store.dispatch(AircraftActions.getAircraftByUid({uid: this.selectedUuid}))
+const aircraft$: Observable<Aircraft | undefined> = this.store.select(selectOneAirCraftUid(this.selectedUuid))
+    // aircraft$.pipe(
+    //   catchError(err => EMPTY),
+    //   tap((aircraft) => {
+    //     if (aircraft) {
+    //       this.aircraft = aircraft
+    //       console.log('iar=====', aircraft)
+    //       this.aircraftForm.patchValue({
+    //         ...this.aircraft,
+    //         airlineUid: this.aircraft.airline.uid,
+    //         aircraftTypeUid: this.aircraft.aircraftType.uid
+    //       });
+    //     }
+    //   }),
+    //   take(1), // Take only one emission to avoid memory leaks
+    //   // Since you only need to receive the aircraft data once and patch it into your form, using take(1) ensures that the subscription is automatically unsubscribed after receiving the first emission, thus preventing any potential memory leaks.
+    // ).subscribe()
+
 interface UserInterface  {
   id: string
   name: string
