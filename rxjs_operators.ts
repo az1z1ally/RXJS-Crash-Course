@@ -172,25 +172,73 @@ searchInputControl.valueChanges.pipe(debounceTime(200)).subscribe(() => {
 
 
 // Dispatch & select
+	
+	
+/*
+Certainly! Let’s dive deeper into the behavior of observables and how it relates to your specific use case.
+
+1. Observables and Asynchronous Data Streams:
+- In Angular (and other reactive programming frameworks), observables represent asynchronous data streams.
+- When you subscribe to an observable, you’re essentially listening for emissions (values) that occur over time.
+- Each emission can be a new value, an error, or a completion signal.
+
+2. Behavior of take(1) Operator:
+- The take(1) operator limits the observable stream to only one emission.
+- After receiving the first value, the subscription is automatically unsubscribed.
+- This is useful when you want to handle only the initial data (e.g., fetching data from an API).
+
+3. Your Original Code:
+	this.store.dispatch(AircraftActions.getAircraftByUid({uid: this.selectedUuid}))
+	this.store.select(selectOneAirCraftUid(this.selectedUuid))
+	  .pipe(
+	  catchError(err => EMPTY),
+	  tap((aircraft) => {
+		if (aircraft) {
+		  this.aircraft = aircraft
+		  console.log('iar=====', aircraft)
+		  this.aircraftForm.patchValue({
+			...this.aircraft,
+			airlineUid: this.aircraft.airline.uid,
+			aircraftTypeUid: this.aircraft.aircraftType.uid
+		  });
+		}
+	  }),
+	  take(1), // Take only one emission to avoid memory leaks
+	  // Since you only need to receive the aircraft data once and patch it into your form, using take(1) ensures that the subscription is automatically unsubscribed after receiving the first emission, thus preventing any potential memory leaks.
+	).subscribe()
+	
+	
+- In your original code, you used take(1) after selecting the aircraft from the store.
+- As a result, only the initial data (including airlineUid and aircraftTypeUid) was patched into the form.
+- Subsequent updates (if any) were ignored because the subscription closed after the first emission.
+
+4. Alternative Approach (Manual Unsubscription):
+- If you want to keep the subscription open for subsequent updates, you can manually unsubscribe when you’re done processing the initial data.
+- Here’s the modified code snippet:
 
 this.store.dispatch(AircraftActions.getAircraftByUid({uid: this.selectedUuid}))
-const aircraft$: Observable<Aircraft | undefined> = this.store.select(selectOneAirCraftUid(this.selectedUuid))
-    // aircraft$.pipe(
-    //   catchError(err => EMPTY),
-    //   tap((aircraft) => {
-    //     if (aircraft) {
-    //       this.aircraft = aircraft
-    //       console.log('iar=====', aircraft)
-    //       this.aircraftForm.patchValue({
-    //         ...this.aircraft,
-    //         airlineUid: this.aircraft.airline.uid,
-    //         aircraftTypeUid: this.aircraft.aircraftType.uid
-    //       });
-    //     }
-    //   }),
-    //   take(1), // Take only one emission to avoid memory leaks
-    //   // Since you only need to receive the aircraft data once and patch it into your form, using take(1) ensures that the subscription is automatically unsubscribed after receiving the first emission, thus preventing any potential memory leaks.
-    // ).subscribe()
+this.store.select(selectOneAirCraftUid(this.selectedUuid)).pipe(
+  catchError(err => EMPTY),
+  take(1), // Take only one emission initially
+  tap((aircraft) => {
+    if (aircraft) {
+      this.aircraft = aircraft;
+      console.log('iar=====', aircraft);
+      this.aircraftForm.patchValue({
+        ...this.aircraft,
+        airlineUid: this.aircraft.airline.uid,
+        aircraftTypeUid: this.aircraft.aircraftType.uid
+      });
+    }
+  })
+).subscribe().unsubscribed(); // Manually unsubscribe when no longer needed
+
+5. Considerations:
+- Use take(1) if you’re interested only in the initial data (e.g., fetching details from an API).
+- Use manual unsubscription if you need to handle subsequent updates (e.g., real-time updates or form changes).
+
+
+*/
 
 interface UserInterface  {
   id: string
@@ -205,3 +253,77 @@ const subject$ = new Subject()
 
 // Subject does'nt store value inside, we don't have getValue() inside subject, subject just propagate value to all our listeners when we call next().
 // Unlike BehaviorSubject, Subject doesn't have an initial value
+
+// SUBSCRIPTIONS unsubscribe to avoid memory leaks
+@Component({
+  selector: 'app-post',
+  templateUrl: './post.component.html',
+  styleUrls: ['./post.component.scss']
+})
+export class PostComponent implements OnInit, OnDestroy{
+  data$ = interval(1000)
+  user$ = from([{id: "1", name: "JS"}, {id: "2", name: "Angular"}])
+  // dataSubscription: Subscription | undefined;
+  unsubscribe$ = new Subject<void>()
+
+  ngOnInit() {
+	// this.data$.pipe(take(1))  // limit the obsersavable to only first emission
+		// .subscribe((data) => {
+			// console.log('data', data )
+		// })
+  
+  
+	// this.dataSubscription = this.data$.subscribe((data) => console.log('data', data ))
+	// this.data$.pipe(takeWhile(value) => value < 5)  // emits while value is less than 5
+		// .subscribe((data) => {
+			// console.log('data', data )
+		// })
+		
+		
+	// takeUntil emits values from the source obsersavable untill the notifier obsersavable emits a value
+	// It is the best code for unsubscribe since we don't need to create a new property for every single subscription
+	this.data$.pipe(takeUntil(this.unsubscribe$)) // subscribe to data$ obsersavable until unsubscribe$ emits a value
+		.subscribe((data) => {
+			console.log('data', data )
+		})
+		
+	this.user$.pipe(takeUntil(this.unsubscribe$)) // subscribe to data$ obsersavable until unsubscribe$ emits a value
+		.subscribe((data) => {
+			console.log('data', data )
+		})
+  }
+
+  ngOnDestroy(): void {
+    // this.dataSubscription?.unsubscribe()
+	this.unsubscribe$.next()
+	this.unsubscribe$.complete()
+  } 
+}
+
+// We can create a class that do the unsubscribe and extends it inside components every time we want to use it
+
+import { Injectable, OnDestroy } from "@angular/core";
+import { Subject } from "rxjs";
+
+@Injectable()
+export abstract class Unsub implements OnDestroy {
+  unsubscribe$ = new Subject<void>()
+
+  ngOnDestroy(): void {
+    this.unsubscribe$.next()
+    this.unsubscribe$.complete()
+  } 
+}
+
+}
+
+// Implementation
+@Component({
+  selector: 'app-post',
+  templateUrl: './post.component.html',
+  styleUrls: ['./post.component.scss']
+})
+export class Post extends Unsub implements OnInit {
+	// Your Code
+}
+
